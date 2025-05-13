@@ -1,1 +1,1 @@
-# db_engineering
+# db_engineering/migrations

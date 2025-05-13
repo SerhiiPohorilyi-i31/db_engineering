@@ -1,60 +1,41 @@
-version: "3.8"
+version: '3.9'
 
 services:
   db:
     image: postgres:16
     container_name: db
+    environment:
+      POSTGRES_DB: wave_translation
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: secret
     ports:
       - "5432:5432"
-    env_file:
-      - .env
     volumes:
-      - test-data-postgres-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=${DB_DATABASE}
-      - POSTGRES_USER=${DB_USERNAME}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    expose:
-      - 5432
+      - pgdata:/var/lib/postgresql/data
 
-  migrations:
-    image: flyway/flyway
-    container_name: flyway
-    volumes:
-      - ./migrations/db:/flyway/sql
-    env_file:
-      - .env
-    environment:
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - FLYWAY_URL=jdbc:postgresql://${DB_HOST}:5432/${DB_DATABASE}
-      - FLYWAY_USER=${DB_USERNAME}
-      - FLYWAY_PASSWORD=${DB_PASSWORD}
-      - FLYWAY_DEFAULT_SCHEMA=${DB_SCHEMA}
-    command: ["migrate"]
-    restart: on-failure:10
+  flyway:
+    image: flyway/flyway:11.3.1
+    command: migrate
     depends_on:
       - db
-
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: api
+    volumes:
+      - ./sql:/flyway/sql
     environment:
-      - MODE_RUN=docker-compose
-    env_file:
-      - .env
+      - FLYWAY_URL=jdbc:postgresql://db:5432/wave_translation
+      - FLYWAY_USER=app_user
+      - FLYWAY_PASSWORD=secret
+      - FLYWAY_LOCATIONS=filesystem:/flyway/sql
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "3000:3000"
+      - "5050:80"
     depends_on:
       - db
-      - migrations
 
 volumes:
-  test-data-postgres-data:
-#    external: true
-
-networks:
-  test-data-network:
-    external: true
+  pgdata:

@@ -1,4 +1,3 @@
-CREATE DATABASE IF NOT EXISTS "wave-translation";
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
     ip_address VARCHAR(45),
